@@ -29,6 +29,7 @@ type response struct {
 	header        Header
 	statusCode    int
 	headerWritten bool
+	body          []byte
 }
 
 func (r *response) Header() Header {
@@ -36,10 +37,9 @@ func (r *response) Header() Header {
 }
 
 func (r *response) Write(bytes []byte) (int, error) {
-	if !r.headerWritten {
-		r.WriteHeader(StatusOK)
-	}
-	return r.writer.Write(bytes)
+	r.WriteHeader(StatusOK)
+	r.body = append(r.body, bytes...)
+	return len(bytes), nil
 }
 
 func (r *response) WriteHeader(statusCode int) {
@@ -48,7 +48,13 @@ func (r *response) WriteHeader(statusCode int) {
 	}
 
 	r.statusCode = statusCode
-	r.writer.Write([]byte("HTTP/1.1 " + strconv.Itoa(statusCode) + " " + StatusText(statusCode)))
+	r.headerWritten = true
+}
+
+func (r *response) flush() {
+	r.header.Set("Content-Length", strconv.Itoa(len(r.body)))
+
+	r.writer.Write([]byte("HTTP/1.1 " + strconv.Itoa(r.statusCode) + " " + StatusText(r.statusCode)))
 	r.writer.Write(crlf)
 
 	for key, values := range r.header {
@@ -61,5 +67,5 @@ func (r *response) WriteHeader(statusCode int) {
 	}
 
 	r.writer.Write(crlf)
-	r.headerWritten = true
+	r.writer.Write(r.body)
 }
