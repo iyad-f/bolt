@@ -57,8 +57,9 @@ func (s *Server) handleConn(conn net.Conn) {
 		resp := &response{writer: bw, header: Header{}}
 		s.Handler.ServeHTTP(resp, req)
 
-		resp.flush()
-		bw.Flush()
+		if err := resp.flush(); err != nil {
+			return
+		}
 
 		if req.Header.Get("Connection") == "close" {
 			return

@@ -51,7 +51,7 @@ func (r *response) WriteHeader(statusCode int) {
 	r.headerWritten = true
 }
 
-func (r *response) flush() {
+func (r *response) flush() error {
 	r.header.Set("Content-Length", strconv.Itoa(len(r.body)))
 
 	r.writer.Write([]byte("HTTP/1.1 " + strconv.Itoa(r.statusCode) + " " + StatusText(r.statusCode)))
@@ -68,4 +68,5 @@ func (r *response) flush() {
 
 	r.writer.Write(crlf)
 	r.writer.Write(r.body)
+	return r.writer.Flush()
 }
