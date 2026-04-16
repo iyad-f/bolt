@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// Request represents a parsed HTTP request.
 type Request struct {
 	Method        string
 	RequestURI    string
@@ -23,6 +24,7 @@ type Request struct {
 	RemoteAddr    string
 }
 
+// ReadRequest parses an HTTP/1.x request from the given buffered reader.
 func ReadRequest(br *bufio.Reader) (*Request, error) {
 	method, uri, proto, err := parseRequestLine(br)
 	if err != nil {
