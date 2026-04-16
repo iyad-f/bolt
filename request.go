@@ -51,6 +51,13 @@ func ReadRequest(br *bufio.Reader) (*Request, error) {
 		return nil, err
 	}
 
+	var body io.ReadCloser
+	if contentLength > 0 {
+		body = io.NopCloser(io.LimitReader(br, contentLength))
+	} else {
+		body = io.NopCloser(strings.NewReader(""))
+	}
+
 	return &Request{
 		Method:        method,
 		RequestURI:    uri,
@@ -59,7 +66,7 @@ func ReadRequest(br *bufio.Reader) (*Request, error) {
 		ProtoMajor:    protoMajor,
 		ProtoMinor:    protoMinor,
 		Header:        header,
-		Body:          nil,
+		Body:          body,
 		ContentLength: contentLength,
 		Host:          header.Get("Host"),
 	}, nil
