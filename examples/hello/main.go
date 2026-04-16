@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/iyad-f/bolt"
@@ -12,8 +13,13 @@ func main() {
 		Addr: ":8080",
 		Handler: bolt.HandlerFunc(func(w bolt.ResponseWriter, r *bolt.Request) {
 			w.Header().Set("Content-Type", "text/plain")
-			w.WriteHeader(bolt.StatusOK)
-			w.Write([]byte("Hello, World!"))
+
+			body, _ := io.ReadAll(r.Body)
+			if len(body) > 0 {
+				fmt.Fprintf(w, "%s %s\nBody: %s", r.Method, r.RequestURI, string(body))
+			} else {
+				fmt.Fprintf(w, "%s %s\nHello, World!", r.Method, r.RequestURI)
+			}
 		}),
 	}
 
