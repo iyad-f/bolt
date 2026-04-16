@@ -48,12 +48,18 @@ func (s *Server) handleConn(conn net.Conn) {
 	br := bufio.NewReader(conn)
 	bw := bufio.NewWriter(conn)
 
-	req, err := ReadRequest(br)
-	if err != nil {
-		return
-	}
+	for {
+		req, err := ReadRequest(br)
+		if err != nil {
+			return
+		}
 
-	resp := &response{writer: bw, header: Header{}}
-	s.Handler.ServeHTTP(resp, req)
-	bw.Flush()
+		resp := &response{writer: bw, header: Header{}}
+		s.Handler.ServeHTTP(resp, req)
+		bw.Flush()
+
+		if req.Header.Get("Connection") == "close" {
+			return
+		}
+	}
 }
