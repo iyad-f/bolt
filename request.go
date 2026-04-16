@@ -52,7 +52,9 @@ func ReadRequest(br *bufio.Reader) (*Request, error) {
 	}
 
 	var body io.ReadCloser
-	if contentLength > 0 {
+	if header.Get("Transfer-Encoding") == "chunked" {
+		body = io.NopCloser(&chunkReader{r: br})
+	} else if contentLength > 0 {
 		body = io.NopCloser(io.LimitReader(br, contentLength))
 	} else {
 		body = io.NopCloser(strings.NewReader(""))
