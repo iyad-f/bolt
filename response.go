@@ -17,7 +17,7 @@ type ResponseWriter interface {
 
 	// Write writes the data to the connection as part of an HTTP response.
 	// If WriteHeader has not been called, it calls WriteHeader(200) before writing the data.
-	Write(bytes []byte) (int, error)
+	Write(p []byte) (int, error)
 
 	// WriteHeader sends the HTTP response header with the provided status code.
 	// It can only be called once per response.
@@ -36,10 +36,10 @@ func (r *response) Header() Header {
 	return r.header
 }
 
-func (r *response) Write(bytes []byte) (int, error) {
+func (r *response) Write(p []byte) (int, error) {
 	r.WriteHeader(StatusOK)
-	r.body = append(r.body, bytes...)
-	return len(bytes), nil
+	r.body = append(r.body, p...)
+	return len(p), nil
 }
 
 func (r *response) WriteHeader(statusCode int) {
