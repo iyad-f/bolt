@@ -3,6 +3,7 @@ package bolt
 import (
 	"bufio"
 	"net"
+	"time"
 )
 
 // Handler responds to an HTTP request.
@@ -20,8 +21,11 @@ func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
 
 // Server defines parameters for running an HTTP server.
 type Server struct {
-	Addr    string
-	Handler Handler
+	Addr         string
+	Handler      Handler
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	IdleTimeout  time.Duration
 }
 
 // ListenAndServe listens on the TCP address s.Addr and serves incoming HTTP requests.
@@ -48,10 +52,25 @@ func (s *Server) handleConn(conn net.Conn) {
 	br := bufio.NewReader(conn)
 	bw := bufio.NewWriter(conn)
 
+	firstRequest := true
+
 	for {
+		if !firstRequest && s.IdleTimeout > 0 {
+			conn.SetReadDeadline(time.Now().Add(s.IdleTimeout))
+		}
+		firstRequest = false
+
 		req, err := ReadRequest(br)
 		if err != nil {
 			return
+		}
+
+		if s.ReadTimeout > 0 {
+			conn.SetReadDeadline(time.Now().Add(s.ReadTimeout))
+		}
+
+		if s.WriteTimeout > 0 {
+			conn.SetWriteDeadline(time.Now().Add(s.WriteTimeout))
 		}
 
 		resp := &response{writer: bw, header: Header{}}
