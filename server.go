@@ -1,9 +1,16 @@
 package bolt
 
 import (
+	"context"
+	"errors"
 	"net"
+	"sync"
+	"sync/atomic"
 	"time"
 )
+
+// ErrServerClosed is returned by ListenAndServe after a call to Shutdown.
+var ErrServerClosed = errors.New("bolt: server closed")
 
 // Handler responds to an HTTP request.
 type Handler interface {
@@ -25,6 +32,9 @@ type Server struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
+	listener     net.Listener
+	activeConn   sync.WaitGroup
+	shuttingDown atomic.Bool
 }
 
 // ListenAndServe listens on the TCP address s.Addr and serves incoming HTTP requests.
@@ -35,9 +45,14 @@ func (s *Server) ListenAndServe() error {
 	}
 	defer listener.Close()
 
+	s.listener = listener
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
+			if s.shuttingDown.Load() {
+				return ErrServerClosed
+			}
 			return err
 		}
 
@@ -45,8 +60,31 @@ func (s *Server) ListenAndServe() error {
 	}
 }
 
+// Shutdown gracefully stops the server. It closes the listener and waits
+// for active connections to finish, or until the context expires.
+func (s *Server) Shutdown(ctx context.Context) error {
+	s.shuttingDown.Store(true)
+	closeErr := s.listener.Close()
+
+	done := make(chan struct{})
+	go func() {
+		s.activeConn.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return closeErr
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
+
+	s.activeConn.Add(1)
+	defer s.activeConn.Done()
 
 	br := getReader(conn)
 	bw := getWriter(conn)
