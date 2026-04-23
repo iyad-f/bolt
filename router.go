@@ -23,7 +23,8 @@ func (ps Params) Get(name string) string {
 // Router is an HTTP request multiplexer that routes requests
 // using a radix tree for fast path matching.
 type Router struct {
-	trees map[string]*node // method: rootNode
+	trees       map[string]*node // method: rootNode
+	middlewares []MiddlewareFunc
 }
 
 // New returns a new Router.
@@ -80,5 +81,10 @@ func (r *Router) ServeHTTP(w ResponseWriter, req *Request) {
 		return
 	}
 
-	handler.ServeHTTP(w, req)
+	Chain(r.middlewares...)(handler).ServeHTTP(w, req)
+}
+
+// Use adds global middleware to the router.
+func (r *Router) Use(middlewares ...MiddlewareFunc) {
+	r.middlewares = append(r.middlewares, middlewares...)
 }

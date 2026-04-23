@@ -6,13 +6,21 @@ import (
 	"log"
 
 	"github.com/iyad-f/bolt"
+	"github.com/iyad-f/bolt/middleware"
 )
 
 func main() {
 	router := bolt.New()
 
+	router.Use(middleware.Logger())
+	router.Use(middleware.Recovery())
+
 	router.GET("/", func(w bolt.ResponseWriter, r *bolt.Request) {
 		w.Write([]byte("Hello, World!"))
+	})
+
+	router.GET("/panic", func(w bolt.ResponseWriter, r *bolt.Request) {
+		panic("something went wrong!")
 	})
 
 	router.GET("/users/:id", func(w bolt.ResponseWriter, r *bolt.Request) {
