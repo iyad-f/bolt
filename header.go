@@ -86,13 +86,13 @@ func CanonicalHeaderKey(s string) string {
 		if !isTokenByte(currByte) && currByte != '-' {
 			return s
 		}
-		if upper && isLower(currByte) {
-			canonical = false
-			break
-		}
-		if !upper && isUpper(currByte) {
-			canonical = false
-			break
+		if canonical {
+			if upper && isLower(currByte) {
+				canonical = false
+			}
+			if !upper && isUpper(currByte) {
+				canonical = false
+			}
 		}
 		upper = currByte == '-'
 	}
