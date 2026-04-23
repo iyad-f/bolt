@@ -1,7 +1,6 @@
 package bolt
 
 import (
-	"bufio"
 	"net"
 	"time"
 )
@@ -49,8 +48,10 @@ func (s *Server) ListenAndServe() error {
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	br := bufio.NewReader(conn)
-	bw := bufio.NewWriter(conn)
+	br := getReader(conn)
+	bw := getWriter(conn)
+	defer putReader(br)
+	defer putWriter(bw)
 
 	firstRequest := true
 
