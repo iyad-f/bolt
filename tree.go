@@ -57,8 +57,10 @@ func (n *node) addRoute(path string, handler Handler) {
 
 		child := &node{}
 		child.insertChild(remaining, fullPath, handler)
-		n.indices += string(child.path[0])
-		if child.wildChild || child.nType == param || child.nType == catchAll {
+
+		indexChar := remaining[0]
+		n.indices += string(indexChar)
+		if child.wildChild || child.nType == param || child.nType == catchAll || indexChar == ':' || indexChar == '*' {
 			n.wildChild = true
 		}
 		n.children = append(n.children, child)
@@ -109,9 +111,12 @@ func (n *node) insertChild(path, fullPath string, handler Handler) {
 			n.wildChild = true
 
 			if len(wildcard) < len(path) {
-				path = path[len(wildcard):]
-				n = child
-				continue
+				remaining := path[len(wildcard):]
+				grandchild := &node{}
+				grandchild.insertChild(remaining, fullPath, handler)
+				child.indices += string(grandchild.path[0])
+				child.children = append(child.children, grandchild)
+				return
 			}
 
 			child.handler = handler
