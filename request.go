@@ -22,6 +22,12 @@ type Request struct {
 	ContentLength int64
 	Host          string
 	RemoteAddr    string
+	params        Params
+}
+
+// PathValue returns the value of the named path parameter, or "" if not found.
+func (r *Request) PathValue(name string) string {
+	return r.params.Get(name)
 }
 
 // ReadRequest parses an HTTP/1.x request from the given buffered reader.

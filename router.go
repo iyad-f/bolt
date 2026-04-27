@@ -74,7 +74,8 @@ func (r *Router) ServeHTTP(w ResponseWriter, req *Request) {
 		return
 	}
 
-	handler, _ := tree.search(req.URL.Path)
+	handler, params := tree.search(req.URL.Path)
+	req.params = params
 	if handler == nil {
 		w.WriteHeader(StatusNotFound)
 		w.Write([]byte(StatusText(StatusNotFound)))

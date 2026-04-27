@@ -24,7 +24,7 @@ func main() {
 	})
 
 	router.GET("/users/:id", func(w bolt.ResponseWriter, r *bolt.Request) {
-		w.Write([]byte("User ID: " + r.URL.Path))
+		w.Write([]byte("User ID: " + r.PathValue("id")))
 	})
 
 	router.POST("/echo", func(w bolt.ResponseWriter, r *bolt.Request) {
