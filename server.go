@@ -2,6 +2,7 @@ package bolt
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net"
 	"sync"
@@ -56,6 +57,23 @@ func (s *Server) ListenAndServe() error {
 	if err != nil {
 		return err
 	}
+	return s.Serve(listener)
+}
+
+// ListenAndServeTLS listens on the TCP address s.Addr and serves HTTPS requests
+// using the provided certificate and key files.
+func (s *Server) ListenAndServeTLS(certFile, keyFile string) error {
+	listener, err := net.Listen("tcp", s.Addr)
+	if err != nil {
+		return err
+	}
+
+	certificate, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return err
+	}
+
+	listener = tls.NewListener(listener, &tls.Config{Certificates: []tls.Certificate{certificate}})
 	return s.Serve(listener)
 }
 
