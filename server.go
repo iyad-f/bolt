@@ -37,18 +37,35 @@ type Server struct {
 	shuttingDown atomic.Bool
 }
 
+type onceCloseListener struct {
+	net.Listener
+	once sync.Once
+	err  error
+}
+
+func (l *onceCloseListener) Close() error {
+	l.once.Do(func() {
+		l.err = l.Listener.Close()
+	})
+	return l.err
+}
+
 // ListenAndServe listens on the TCP address s.Addr and serves incoming HTTP requests.
 func (s *Server) ListenAndServe() error {
 	listener, err := net.Listen("tcp", s.Addr)
 	if err != nil {
 		return err
 	}
-	defer listener.Close()
+	return s.Serve(listener)
+}
 
-	s.listener = listener
+// Serve accepts incoming HTTP connections on the given listener.
+func (s *Server) Serve(listener net.Listener) error {
+	s.listener = &onceCloseListener{Listener: listener}
+	defer s.listener.Close()
 
 	for {
-		conn, err := listener.Accept()
+		conn, err := s.listener.Accept()
 		if err != nil {
 			if s.shuttingDown.Load() {
 				return ErrServerClosed
