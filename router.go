@@ -65,6 +65,11 @@ func (r *Router) PATCH(path string, handler HandlerFunc) {
 	r.Handle("PATCH", path, handler)
 }
 
+// Static registers a handler that serves static files from the given root directory.
+func (r *Router) Static(prefix, root string) {
+	r.GET(prefix+"/*filepath", fileServer(root))
+}
+
 // ServeHTTP dispatches the request to the matching route handler.
 func (r *Router) ServeHTTP(w ResponseWriter, req *Request) {
 	tree, ok := r.trees[req.Method]
