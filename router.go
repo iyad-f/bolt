@@ -72,20 +72,24 @@ func (r *Router) Static(prefix, root string) {
 
 // ServeHTTP dispatches the request to the matching route handler.
 func (r *Router) ServeHTTP(w ResponseWriter, req *Request) {
-	tree, ok := r.trees[req.Method]
-	if !ok {
-		w.WriteHeader(StatusMethodNotAllowed)
-		w.Write([]byte(StatusText(StatusMethodNotAllowed)))
-		return
-	}
+	handler := HandlerFunc(func(w ResponseWriter, req *Request) {
+		tree, ok := r.trees[req.Method]
+		if !ok {
+			w.WriteHeader(StatusMethodNotAllowed)
+			w.Write([]byte(StatusText(StatusMethodNotAllowed)))
+			return
+		}
 
-	handler, params := tree.search(req.URL.Path)
-	req.params = params
-	if handler == nil {
-		w.WriteHeader(StatusNotFound)
-		w.Write([]byte(StatusText(StatusNotFound)))
-		return
-	}
+		h, params := tree.search(req.URL.Path)
+		req.params = params
+		if h == nil {
+			w.WriteHeader(StatusNotFound)
+			w.Write([]byte(StatusText(StatusNotFound)))
+			return
+		}
+
+		h.ServeHTTP(w, req)
+	})
 
 	Chain(r.middlewares...)(handler).ServeHTTP(w, req)
 }
