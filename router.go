@@ -1,5 +1,7 @@
 package bolt
 
+import "sync"
+
 // Param is a single URL path parameter, consisting of a key and a value.
 type Param struct {
 	Key   string
@@ -25,6 +27,8 @@ func (ps Params) Get(name string) string {
 type Router struct {
 	trees       map[string]*node // method: rootNode
 	middlewares []MiddlewareFunc
+	maxParams   uint16
+	paramsPool  sync.Pool
 }
 
 // New returns a new Router.
@@ -38,6 +42,14 @@ func (r *Router) Handle(method, path string, handler Handler) {
 		r.trees[method] = &node{}
 	}
 	r.trees[method].addRoute(path, handler)
+
+	if paramsCount := countParams(path); paramsCount > r.maxParams {
+		r.maxParams = paramsCount
+		r.paramsPool.New = func() any {
+			ps := make(Params, 0, r.maxParams)
+			return &ps
+		}
+	}
 }
 
 // GET registers a handler for GET requests.
@@ -80,15 +92,24 @@ func (r *Router) ServeHTTP(w ResponseWriter, req *Request) {
 			return
 		}
 
-		h, params := tree.search(req.URL.Path)
-		req.params = params
-		if h == nil {
+		hndlr, params, _ := tree.getValue(req.URL.Path, r.getParams)
+		if params != nil {
+			req.params = *params
+		}
+
+		if hndlr == nil {
+			if params != nil {
+				r.putParams(params)
+			}
 			w.WriteHeader(StatusNotFound)
 			w.Write([]byte(StatusText(StatusNotFound)))
 			return
 		}
 
-		h.ServeHTTP(w, req)
+		hndlr.ServeHTTP(w, req)
+		if params != nil {
+			r.putParams(params)
+		}
 	})
 
 	Chain(r.middlewares...)(handler).ServeHTTP(w, req)
@@ -97,4 +118,15 @@ func (r *Router) ServeHTTP(w ResponseWriter, req *Request) {
 // Use adds global middleware to the router.
 func (r *Router) Use(middlewares ...MiddlewareFunc) {
 	r.middlewares = append(r.middlewares, middlewares...)
+}
+
+func (r *Router) getParams() *Params {
+	ps, _ := r.paramsPool.Get().(*Params)
+	*ps = (*ps)[:0]
+	return ps
+}
+
+func (r *Router) putParams(ps *Params) {
+	*ps = (*ps)[:0]
+	r.paramsPool.Put(ps)
 }
