@@ -104,7 +104,9 @@ func TestServer(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		handlerStarted := make(chan struct{})
 		server := &Server{Handler: HandlerFunc(func(w ResponseWriter, r *Request) {
+			close(handlerStarted)
 			time.Sleep(100 * time.Millisecond)
 			w.Write([]byte("done"))
 		})}
@@ -117,6 +119,8 @@ func TestServer(t *testing.T) {
 		defer conn.Close()
 
 		fmt.Fprintf(conn, "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+
+		<-handlerStarted
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
