@@ -4,7 +4,9 @@ import "sync"
 
 // Param is a single URL path parameter, consisting of a key and a value.
 type Param struct {
-	Key   string
+	// Key is the parameter name.
+	Key string
+	// Value is the parameter value extracted from the URL.
 	Value string
 }
 

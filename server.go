@@ -28,10 +28,15 @@ func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
 
 // Server defines parameters for running an HTTP server.
 type Server struct {
-	Addr         string
-	Handler      Handler
-	ReadTimeout  time.Duration
+	// Addr is the TCP address to listen on, in the form "host:port".
+	Addr string
+	// Handler is the handler to invoke for incoming requests.
+	Handler Handler
+	// ReadTimeout is the maximum duration for reading the entire request.
+	ReadTimeout time.Duration
+	// WriteTimeout is the maximum duration before timing out writes of the response.
 	WriteTimeout time.Duration
+	// IdleTimeout is the maximum duration to wait for the next request on a keep-alive connection.
 	IdleTimeout  time.Duration
 	listener     net.Listener
 	activeConn   sync.WaitGroup

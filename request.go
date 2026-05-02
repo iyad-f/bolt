@@ -11,18 +11,29 @@ import (
 
 // Request represents a parsed HTTP request.
 type Request struct {
-	Method        string
-	RequestURI    string
-	URL           *url.URL
-	Proto         string
-	ProtoMajor    int
-	ProtoMinor    int
-	Header        Header
-	Body          io.ReadCloser
+	// Method is the HTTP method (GET, POST, PUT, etc.).
+	Method string
+	// RequestURI is the unmodified request-target from the request line.
+	RequestURI string
+	// URL is the parsed request URI.
+	URL *url.URL
+	// Proto is the protocol version string (e.g. "HTTP/1.1").
+	Proto string
+	// ProtoMajor is the major version number of the HTTP protocol.
+	ProtoMajor int
+	// ProtoMinor is the minor version number of the HTTP protocol.
+	ProtoMinor int
+	// Header contains the request header fields.
+	Header Header
+	// Body is the request body.
+	Body io.ReadCloser
+	// ContentLength is the length of the request body, or -1 if unknown.
 	ContentLength int64
-	Host          string
-	RemoteAddr    string
-	params        Params
+	// Host is the value of the Host header field.
+	Host string
+	// RemoteAddr is the network address of the client that sent the request.
+	RemoteAddr string
+	params     Params
 }
 
 // PathValue returns the value of the named path parameter, or "" if not found.
