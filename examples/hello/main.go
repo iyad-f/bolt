@@ -28,6 +28,8 @@ func main() {
 
 	router.Use(middleware.Logger())
 	router.Use(middleware.Recovery())
+	router.Use(middleware.CORS(middleware.DefaultCORSConfig()))
+	router.Use(middleware.RateLimit(middleware.DefaultRateLimitConfig()))
 
 	router.GET("/", func(w bolt.ResponseWriter, r *bolt.Request) {
 		w.Write([]byte("Hello, World!"))
@@ -45,6 +47,8 @@ func main() {
 		body, _ := io.ReadAll(r.Body)
 		fmt.Fprintf(w, "Echo: %s", string(body))
 	})
+
+	router.Static("/static", "./public")
 
 	server := &bolt.Server{
 		Addr:    ":8080",
