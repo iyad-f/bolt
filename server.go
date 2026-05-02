@@ -91,6 +91,7 @@ func (s *Server) Serve(listener net.Listener) error {
 			return err
 		}
 
+		s.activeConn.Add(1)
 		go s.handleConn(conn)
 	}
 }
@@ -118,7 +119,6 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	s.activeConn.Add(1)
 	defer s.activeConn.Done()
 
 	br := getReader(conn)
