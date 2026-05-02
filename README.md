@@ -60,6 +60,16 @@ func main() {
 }
 ```
 
+## Development
+
+Install [pre-commit](https://pre-commit.com/#install), then run:
+
+```
+pre-commit install --hook-type commit-msg
+```
+
+Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat: ...`, `fix: ...`, `docs: ...`).
+
 ## Running tests
 
 ```
